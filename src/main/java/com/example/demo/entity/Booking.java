@@ -48,9 +48,10 @@ public class Booking {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_id")
-    private Payment payment;
+    /*@OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id") //booking can happen without the payment, though the status
+                                     // would be unconfirmed.
+    private Payment payment;*/
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

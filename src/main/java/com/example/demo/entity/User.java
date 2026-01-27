@@ -27,8 +27,11 @@ public class User {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    private Set<Role> roles;
+    private Set<Role> roles; //a separate table is formed for this in the database.
 }
+
+// user_id    roles
+//   --        --
 
 //When the user gets first created, the user is a guest at first and the system administrator has the power to
 //update the user to hotel manager.

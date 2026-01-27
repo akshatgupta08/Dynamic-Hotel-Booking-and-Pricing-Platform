@@ -40,6 +40,9 @@ public class Inventory {// what does the date specify in the inventory. WHat is 
     @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     private Integer bookedCount; //number of rooms that have been booked inside that hotel.
 
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    private Integer reservedCount;
+
     @Column(nullable = false)
     private Integer totalCount; //total number of rooms available in that hotel.
 

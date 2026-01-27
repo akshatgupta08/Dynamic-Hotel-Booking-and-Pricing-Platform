@@ -9,7 +9,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Guest {
-
+//everybody including the managers are guests in the system. A user is at least a Guest and can have other
+//roles. So it is not important that a guest is associated with a booking.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+//Hotel X has a room type T with base price P, capacity C, and totalCount units available
+//consider adding the following uniqueness contraint for making unique id correspond to a unique room type.
+
 public class Room {
 
     @Id
