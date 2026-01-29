@@ -17,7 +17,9 @@ public class Guest {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private User user; // A guest does not necessarily corrspond to the same user.
+
+    //A single user could be booking hotels for his friends and family. Those frieds and family would be the guests.
 
     @Column(nullable = false)
     private String name;

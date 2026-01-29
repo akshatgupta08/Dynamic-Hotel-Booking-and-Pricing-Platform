@@ -104,6 +104,7 @@ public class BookingServiceImpl {
             throw new IllegalStateException("Booking has already expired");
         }
 
+        //Booking has to be reserved first only then you can add the guests.
         if(booking.getBookingStatus() != BookingStatus.RESERVED) {
             throw new IllegalStateException("Booking is not under reserved state, cannot add guests");
         }
@@ -112,7 +113,7 @@ public class BookingServiceImpl {
             Guest guest = modelMapper.map(guestDto, Guest.class);
             guest.setUser(getCurrentUser());
             guest = guestRepository.save(guest);
-            booking.getGuests().add(guest);
+            booking.getGuests().add(guest); // the guest is added to the join table (Many to Many relationship)
         }
 
         booking.setBookingStatus(BookingStatus.GUESTS_ADDED);
@@ -120,6 +121,10 @@ public class BookingServiceImpl {
         return modelMapper.map(booking, BookingDto.class);
     }
 
+    //before adding new guests, we must check if the booking has expired or not.
+    //You get the time of creation of the booking. add 10 minutes to it and see if the
+    // current time is lesser than the expiry time.
+    //DO we remove the bookings that have expired.
     public boolean hasBookingExpired(Booking booking) {
         return booking.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now());
     }
@@ -131,3 +136,5 @@ public class BookingServiceImpl {
     }
 
 }
+
+//talk about the reserved count feature and how it is different from the booked count and why it helps.

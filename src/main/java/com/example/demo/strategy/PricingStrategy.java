@@ -1,6 +1,11 @@
-package com.example.demo;
+package com.example.demo.strategy;
 
-public class PricingStrategy {
+import com.example.demo.entity.Inventory;
 
-    
+import java.math.BigDecimal;
+
+public interface PricingStrategy {
+
+    BigDecimal calculatePrice(Inventory inventory);
+
 }
