@@ -6,14 +6,13 @@ import com.example.demo.dto.GuestDto;
 import com.example.demo.entity.*;
 import com.example.demo.entity.enums.BookingStatus;
 import com.example.demo.exceptions.ResourceNotFoundException;
-import com.example.demo.repositories.BookingRepository;
-import com.example.demo.repositories.HotelRepository;
-import com.example.demo.repositories.InventoryRepository;
-import com.example.demo.repositories.RoomRepository;
+import com.example.demo.exceptions.UnAuthorisedException;
+import com.example.demo.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,7 +23,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class BookingServiceImpl {
+public class BookingServiceImpl implements BookingService {
 
     private final GuestRepository guestRepository;
     private final ModelMapper modelMapper;
@@ -91,14 +90,23 @@ public class BookingServiceImpl {
         return modelMapper.map(booking, BookingDto.class);
     }
 
+    //The user trying to add guests should be the one who owns the booking.
     @Override
     @Transactional
     public BookingDto addGuests(Long bookingId, List<GuestDto> guestDtoList) {
-
+        //A person who does not own the booking could also be making bookings for other guests.
+        //or some person who is not even a guest could start booking.
+        //To protect against this I compare the current user with the user who owns the booking.
         log.info("Adding guests for booking with id: {}", bookingId);
 
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
                 new ResourceNotFoundException("Booking not found with id: "+bookingId));
+
+        User user = getCurrentUser();
+
+        if(!(user.equals(booking.getUser()))) {
+            throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
+        }
 
         if (hasBookingExpired(booking)) {
             throw new IllegalStateException("Booking has already expired");
@@ -129,10 +137,8 @@ public class BookingServiceImpl {
         return booking.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now());
     }
 
-    public User getCurrentUser() {   //what is this??
-        User user = new User();
-        user.setId(1L); // TODO: REMOVE DUMMY USER it does seem to be a dummy user.
-        return user;
+    public User getCurrentUser() {
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 }

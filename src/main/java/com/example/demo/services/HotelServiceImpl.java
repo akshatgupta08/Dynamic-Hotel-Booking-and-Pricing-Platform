@@ -5,13 +5,16 @@ import com.example.demo.dto.HotelInfoDto;
 import com.example.demo.dto.RoomDto;
 import com.example.demo.entity.Hotel;
 import com.example.demo.entity.Room;
+import com.example.demo.entity.User;
 import com.example.demo.exceptions.ResourceNotFoundException;
+import com.example.demo.exceptions.UnAuthorisedException;
 import com.example.demo.repositories.HotelRepository;
 import com.example.demo.repositories.RoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +34,9 @@ import java.util.List;
             log.info("Creating a new hotel with name: {}", hotelDto.getName());
             Hotel hotel = modelMapper.map(hotelDto, Hotel.class);
             hotel.setActive(false); // At first there will be no inventory for this hotel, so it will not be shown as active.
+
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            hotel.setOwner(user); //only admins can access through the controllers.
             hotel = hotelRepository.save(hotel);
             log.info("Created a new hotel with ID: {}", hotelDto.getId());
             return modelMapper.map(hotel, HotelDto.class);
@@ -42,6 +48,13 @@ import java.util.List;
             Hotel hotel = hotelRepository
                     .findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + id));
+
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            if(!user.equals(hotel.getOwner())) {
+                throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+            }
+
             return modelMapper.map(hotel, HotelDto.class);
         }
 
@@ -51,6 +64,13 @@ import java.util.List;
             Hotel hotel = hotelRepository
                     .findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + id));
+
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            if(!user.equals(hotel.getOwner())) {
+                throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+            }
+
             modelMapper.map(hotelDto, hotel);
             hotel.setId(id);
             hotel = hotelRepository.save(hotel);
@@ -67,6 +87,12 @@ import java.util.List;
                     .orElseThrow(()-> new ResourceNotFoundException("Hotel not found with id: " + id));
             //Since the hotel is being deleted, all the rooms present in the inventory associated to this hotel
             // are to be removed starting from the current localDate.
+
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            if(!user.equals(hotel.getOwner())) {
+                throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+            }
 
             for (Room room : hotel.getRooms()) {
                 inventoryService.deleteAllInventories(room); //this is giving an error when
@@ -85,6 +111,12 @@ import java.util.List;
                     .findById(hotelId)
                     .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId));
 
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            if(!user.equals(hotel.getOwner())) {
+                throw new UnAuthorisedException("This user does not own this hotel with id: "+ hotelId);
+            }
+
             hotel.setActive(true);
 
             // assuming that we only activate the hotel once
@@ -94,7 +126,7 @@ import java.util.List;
             }
         }
 
-
+        //This is a public method. Just gives information about the hotel.
         @Override
         public HotelInfoDto getHotelInfoById(Long hotelId) {
             Hotel hotel = hotelRepository
@@ -110,3 +142,5 @@ import java.util.List;
         }
 
     }
+
+    //only the hotel owners can make critical state changes to their hotels.

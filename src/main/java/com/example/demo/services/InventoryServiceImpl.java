@@ -2,10 +2,12 @@ package com.example.demo.services;
 
 
 import com.example.demo.dto.HotelDto;
+import com.example.demo.dto.HotelPriceDto;
 import com.example.demo.dto.HotelSearchRequest;
 import com.example.demo.entity.Hotel;
 import com.example.demo.entity.Inventory;
 import com.example.demo.entity.Room;
+import com.example.demo.repositories.HotelMinPriceRepository;
 import com.example.demo.repositories.InventoryRepository;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ public class InventoryServiceImpl implements InventoryService{
     private final InventoryRepository inventoryRepository;
 
     private final ModelMapper modelMapper;
+
+    private final HotelMinPriceRepository hotelMinPriceRepository;
 
     @Override
     public void initializeRoomForAYear(Room room) {
@@ -55,23 +59,21 @@ public class InventoryServiceImpl implements InventoryService{
     }
 
     @Override
-    public Page<HotelDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
+    public Page<HotelPriceDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
         log.info("Searching hotels for {} city, from {} to {}", hotelSearchRequest.getCity(), hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate());
-        //getting the parameters of the pageable object.
         Pageable pageable = PageRequest.of(hotelSearchRequest.getPage(), hotelSearchRequest.getSize());
-
-        //counting the number of days we require the hotel for.
         long dateCount =
                 ChronoUnit.DAYS.between(hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate()) + 1;
 
+        // business logic - 90 days
+        Page<HotelPriceDto> hotelPage =
+                hotelMinPriceRepository.findHotelsWithAvailableInventory(hotelSearchRequest.getCity(),
+                        hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate(), hotelSearchRequest.getRoomsCount(),
+                        dateCount, pageable);
 
-        Page<Hotel> hotelPage = inventoryRepository.findHotelsWithAvailableInventory(hotelSearchRequest.getCity(),
-                hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate(), hotelSearchRequest.getRoomsCount(),
-                dateCount, pageable);
-
-        //you return the Page holding hotelDto.
-        return hotelPage.map((element) -> modelMapper.map(element, HotelDto.class));
+        return hotelPage;
     }
+
 }
 
 //It should not be the case that in a Hotel suppose you have 2 room types/

@@ -1,7 +1,9 @@
 package com.example.demo.services;
 
 import com.example.demo.entity.Hotel;
+import com.example.demo.entity.HotelMinPrice;
 import com.example.demo.entity.Inventory;
+import com.example.demo.repositories.HotelMinPriceRepository;
 import com.example.demo.repositories.HotelRepository;
 import com.example.demo.repositories.InventoryRepository;
 import com.example.demo.strategy.PricingService;
@@ -75,15 +77,17 @@ public class PricingUpdateService {
 
         // Prepare HotelPrice entities in bulk
         List<HotelMinPrice> hotelPrices = new ArrayList<>();
+
         dailyMinPrices.forEach((date, price) -> {
             HotelMinPrice hotelPrice = hotelMinPriceRepository.findByHotelAndDate(hotel, date)
-                    .orElse(new HotelMinPrice(hotel, date));
-            hotelPrice.setPrice(price);
-            hotelPrices.add(hotelPrice);
+                    .orElse(new HotelMinPrice(hotel, date));//we check if the entry already exists inside the
+                                                        //hotelMinRepository table otherwise make an entry.
+            hotelPrice.setPrice(price); // put the updated minimum price.
+            hotelPrices.add(hotelPrice); // put another hotelMinPrice entity
         });
 
         // Save all HotelPrice entities in bulk
-        hotelMinPriceRepository.saveAll(hotelPrices);
+        hotelMinPriceRepository.saveAll(hotelPrices); // save all of the entries.
     }
 
     private void updateInventoryPrices(List<Inventory> inventoryList) {
