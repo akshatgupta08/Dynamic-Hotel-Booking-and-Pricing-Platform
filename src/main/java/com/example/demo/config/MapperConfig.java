@@ -1,16 +1,14 @@
-package com.example.demo.configurations;
+package com.example.demo.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class BeanGenerator {
+public class MapperConfig {
 
     @Bean
-    public ModelMapper getModelMapper() {
-
+    public ModelMapper modelMapper() {
         return new ModelMapper();
-
     }
 }

@@ -4,10 +4,12 @@ import com.example.demo.entity.Inventory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class PricingService {
-
+    //takes in a single inventory, passes it through all the strategies and gets the total price of that single inventory.
+    //We get the price of the single room present in that inventory row.
     public BigDecimal calculateDynamicPricing(Inventory inventory) {
         PricingStrategy pricingStrategy = new BasePricingStrategy();
 
@@ -21,6 +23,13 @@ public class PricingService {
 
         //we are going through all the strategies and increasing the price according to the valid startegies.
         // this is the decorator design pattern.
+    }
+
+    public BigDecimal calculateTotalPrice(List<Inventory> inventoryList) {
+        //think of multiple inventory rows as multiple inventory days.
+        return inventoryList.stream()
+                .map(this::calculateDynamicPricing)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
 
