@@ -4,7 +4,9 @@ import com.example.demo.entity.Booking;
 import com.example.demo.entity.Hotel;
 import com.example.demo.entity.User;
 import com.example.demo.entity.enums.BookingStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,6 +38,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("status") BookingStatus status
     );
 
-
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT b
+    FROM Booking b
+    WHERE b.id = :id
+""")
+    Optional<Booking> lockBooking(@Param("id") Long id);
 
 }

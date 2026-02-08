@@ -20,7 +20,7 @@ import java.util.List;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
-
+//PESSIMISTIC_WRITE lock on a row prevents other transactions from reading or writing to the same row.
     void deleteByRoom(Room room);
 
     @Query("""

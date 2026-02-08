@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
@@ -173,7 +174,14 @@ public class BookingServiceImpl implements BookingService {
         if (!user.equals(booking.getUser())) {
             throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
         }
+
+        //The booking has been locked to avoid the case where it is detected that the booking has not expired
+        //and then the cron job expires the booking and frees up inventory. (Concurrency Control)
+
+        bookingRepository.lockBooking(booking.getId());
+
         if (hasBookingExpired(booking)) {
+
             throw new IllegalStateException("Booking has already expired");
         }
 
@@ -231,8 +239,9 @@ public class BookingServiceImpl implements BookingService {
             throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
         }
 
-        if(booking.getBookingStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Only confirmed bookings can be cancelled");
+        if(booking.getBookingStatus() != BookingStatus.CONFIRMED &&
+                booking.getBookingStatus() != BookingStatus.PAYMENTS_PENDING) {
+            throw new IllegalStateException("Only confirmed bookings or bookings whose payment is pending can be cancelled");
         }
 
         booking.setBookingStatus(BookingStatus.CANCELLED);
@@ -241,20 +250,28 @@ public class BookingServiceImpl implements BookingService {
         inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
                 booking.getCheckOutDate(), booking.getRoomsCount());
 
-        inventoryRepository.cancelBooking(booking.getRoom().getId(), booking.getCheckInDate(),
-                booking.getCheckOutDate(), booking.getRoomsCount());
+        if(booking.getBookingStatus() == BookingStatus.CONFIRMED) {
+            inventoryRepository.cancelBooking(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
 
-        // handle the refund
+            // handle the refund
+            try {
+                Session session = Session.retrieve(booking.getPaymentSessionId());
+                RefundCreateParams refundParams = RefundCreateParams.builder()
+                        .setPaymentIntent(session.getPaymentIntent())
+                        .build();
 
-        try {
-            Session session = Session.retrieve(booking.getPaymentSessionId());
-            RefundCreateParams refundParams = RefundCreateParams.builder()
-                    .setPaymentIntent(session.getPaymentIntent())
-                    .build();
+                Refund.create(refundParams);
+            } catch (StripeException e) {
+                throw new RuntimeException(e);
+            }
 
-            Refund.create(refundParams);
-        } catch (StripeException e) {
-            throw new RuntimeException(e);
+        } else {
+            //The method for expiry works for the PENDING_PAYMENT state too.
+            inventoryRepository.expireBooking(booking.getRoom().getId(),
+                    booking.getCheckInDate(),
+                    booking.getCheckOutDate(),
+                    booking.getRoomsCount());
         }
     }
 
@@ -266,6 +283,10 @@ public class BookingServiceImpl implements BookingService {
         User user = getCurrentUser();
         if (!user.equals(booking.getUser())) {
             throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
+        }
+
+        if(hasBookingExpired(booking)) {
+            return BookingStatus.EXPIRED;
         }
 
         return booking.getBookingStatus();
