@@ -1,10 +1,17 @@
 package com.example.demo.dto;
 
+import com.example.demo.entity.enums.Gender;
+
+import java.time.LocalDate;
+
 public class UserDto {
 
-    private String email;
     private Long id;
+    private String email;
     private String name;
+    private Gender gender;
+    private LocalDate dateOfBirth;
+
 }
 
 //I could add validations here to ensure that the email is given in the right format.

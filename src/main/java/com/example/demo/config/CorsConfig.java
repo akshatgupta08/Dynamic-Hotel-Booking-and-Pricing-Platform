@@ -6,6 +6,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
+
+//It might be better to remove this, if you do not have the react front end yet.
+
 public class CorsConfig {
 
     @Bean

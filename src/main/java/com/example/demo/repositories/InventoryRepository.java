@@ -116,10 +116,24 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                 SET i.bookedCount = i.bookedCount - :numberOfRooms
                 WHERE i.room.id = :roomId
                   AND i.date BETWEEN :startDate AND :endDate
-                  AND (i.totalCount - i.bookedCount) >= :numberOfRooms // why is this important?
+                  AND i.bookedCount >= :numberOfRooms
                   AND i.closed = false
             """)
     void cancelBooking(@Param("roomId") Long roomId,
+                       @Param("startDate") LocalDate startDate,
+                       @Param("endDate") LocalDate endDate,
+                       @Param("numberOfRooms") int numberOfRooms);
+
+    @Modifying
+    @Query("""
+                UPDATE Inventory i
+                SET i.reservedCount = i.reservedCount - :numberOfRooms
+                WHERE i.room.id = :roomId
+                  AND i.date BETWEEN :startDate AND :endDate
+                  AND i.reservedCount >= :numberOfRooms
+                  AND i.closed = false
+            """)
+    void expireBooking(@Param("roomId") Long roomId,
                        @Param("startDate") LocalDate startDate,
                        @Param("endDate") LocalDate endDate,
                        @Param("numberOfRooms") int numberOfRooms);
@@ -153,7 +167,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                          @Param("surgeFactor") BigDecimal surgeFactor);
 
     @Query("""
-       SELECT new com.codingshuttle.projects.airBnbApp.dto.RoomPriceDto(
+       SELECT new com.example.demo.dto.RoomPriceDto(
             i.room,
             CASE
                 WHEN COUNT(i) = :dateCount THEN AVG(i.price)

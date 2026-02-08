@@ -3,6 +3,7 @@ package com.example.demo.services;
 import com.example.demo.dto.BookingDto;
 import com.example.demo.dto.BookingRequest;
 import com.example.demo.dto.GuestDto;
+import com.example.demo.dto.HotelReportDto;
 import com.example.demo.entity.enums.BookingStatus;
 import com.stripe.model.Event;
 

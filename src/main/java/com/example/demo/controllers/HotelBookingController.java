@@ -1,8 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.BookingDto;
-import com.example.demo.dto.BookingRequest;
-import com.example.demo.dto.GuestDto;
+import com.example.demo.dto.*;
 import com.example.demo.services.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +23,7 @@ public class HotelBookingController {
 
     @PostMapping("/{bookingId}/addGuests")
     public ResponseEntity<BookingDto> addGuests(@PathVariable Long bookingId,
-                                                @RequestBody List<GuestDto> guestDtoList) {
+                                                @RequestBody List<Long> guestDtoList) {
         return ResponseEntity.ok(bookingService.addGuests(bookingId, guestDtoList)); // May be this is where the join
                          // table will be helpful.
     }

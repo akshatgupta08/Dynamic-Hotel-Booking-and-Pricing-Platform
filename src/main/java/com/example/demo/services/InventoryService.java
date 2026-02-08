@@ -1,10 +1,10 @@
 package com.example.demo.services;
 
-import com.example.demo.dto.HotelDto;
-import com.example.demo.dto.HotelPriceDto;
-import com.example.demo.dto.HotelSearchRequest;
+import com.example.demo.dto.*;
 import com.example.demo.entity.Room;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface InventoryService {
 
@@ -14,4 +14,7 @@ public interface InventoryService {
 
     Page<HotelPriceDto> searchHotels(HotelSearchRequest hotelSearchRequest);
 
+    List<InventoryDto> getAllInventoryByRoom(Long roomId);
+
+    void updateInventory(Long roomId, UpdateInventoryRequestDto updateInventoryRequestDto);
 }

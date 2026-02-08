@@ -4,6 +4,7 @@ import com.example.demo.entity.User;
 import com.example.demo.services.UserService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import java.io.IOException;
+
 
 @Configuration
 @RequiredArgsConstructor
@@ -56,8 +60,9 @@ public class JWTAuthFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (JwtException ex) {
-            handlerExceptionResolver.resolveException(request, response, null, ex); // now the excpetion will go to the
-             // MVC, from where gloablException handler can take care of the exception.
+            //The code below explicitly hands control to Spring MVC’s exception-handling mechanism, even though at this point we are
+            // inside the Security filter chain.
+            handlerExceptionResolver.resolveException(request, response, null, ex);
         }
     }
 }
