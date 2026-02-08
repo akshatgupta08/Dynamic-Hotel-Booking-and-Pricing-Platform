@@ -23,7 +23,7 @@ public class BookingExpiryService {
    private final InventoryRepository inventoryRepository;
 
     @Scheduled(cron = "0 * * * * *")
-    public List<Booking> expireBookings() {
+    public void expireBookings() {
       //get the expired bookings first
         //only set the reserved bookings to Expired state.
         List<Booking> expiredBookings =
@@ -44,7 +44,7 @@ public class BookingExpiryService {
 
         }
 
-        return bookingRepository.saveAll(expiredBookings);
+        bookingRepository.saveAll(expiredBookings);
     }
 
 }

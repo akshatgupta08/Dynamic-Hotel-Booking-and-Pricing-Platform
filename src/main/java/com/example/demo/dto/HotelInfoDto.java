@@ -11,6 +11,6 @@ public class HotelInfoDto {
 
     private HotelDto hotel;
 
-    private List<RoomDto> rooms;
+    private List<RoomPriceResponseDto> rooms;
 
 }

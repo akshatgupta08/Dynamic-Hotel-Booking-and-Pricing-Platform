@@ -1,11 +1,9 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.HotelDto;
-import com.example.demo.dto.HotelInfoDto;
-import com.example.demo.dto.HotelPriceDto;
-import com.example.demo.dto.HotelSearchRequest;
+import com.example.demo.dto.*;
 import com.example.demo.services.HotelService;
 import com.example.demo.services.InventoryService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +20,16 @@ public class HotelBrowseController {
     private final HotelService hotelService;
 
     @GetMapping("/search")
-    public ResponseEntity<Page<HotelPriceDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest) {
+    public ResponseEntity<Page<HotelPriceResponseDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest) {
        //multiple hotels come in a page.
-        Page<HotelPriceDto> page = inventoryService.searchHotels(hotelSearchRequest);
+        var page = inventoryService.searchHotels(hotelSearchRequest);
         return ResponseEntity.ok(page);
     }
 
     @GetMapping("/{hotelId}/info")
-    public ResponseEntity<HotelInfoDto> getHotelInfo(@PathVariable Long hotelId) {
-        return ResponseEntity.ok(hotelService.getHotelInfoById(hotelId));
+    @Operation(summary = "Get a hotel info by hotelId", tags = {"Browse Hotels"})
+    public ResponseEntity<HotelInfoDto> getHotelInfo(@PathVariable Long hotelId, @RequestBody HotelInfoRequestDto hotelInfoRequestDto) {
+        return ResponseEntity.ok(hotelService.getHotelInfoById(hotelId, hotelInfoRequestDto));
     }
 
 }

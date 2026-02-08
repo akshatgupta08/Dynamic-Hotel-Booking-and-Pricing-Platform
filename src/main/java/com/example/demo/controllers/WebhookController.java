@@ -26,7 +26,11 @@ public class WebhookController {
     @Operation(summary = "Capture the payments", tags = {"Webhook"})
     public ResponseEntity<Void> capturePayments(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
         try {
+
             //event holds the information regarding what is the status of the payment.
+            //The payload and the secret key is used to recalculate the signature and matched with the values present in the
+            //signature headers for verfification.
+            //This check ensures that only stripe calls this API.
             Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
             bookingService.capturePayment(event);
             return ResponseEntity.noContent().build();
@@ -36,5 +40,3 @@ public class WebhookController {
     }
 }
 
-//The payload and the secret key is used to recalculate the signature and matched with the values present in the
-//signature headers for verfification.
