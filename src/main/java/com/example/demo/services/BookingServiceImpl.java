@@ -143,7 +143,6 @@ public class BookingServiceImpl implements BookingService {
             booking.getGuests().add(guest);
         }
 
-        booking.setBookingStatus(BookingStatus.GUESTS_ADDED);
         booking = bookingRepository.save(booking);
         return modelMapper.map(booking, BookingDto.class);
     }
@@ -244,13 +243,17 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalStateException("Only confirmed bookings or bookings whose payment is pending can be cancelled");
         }
 
-        booking.setBookingStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-
-        inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
-                booking.getCheckOutDate(), booking.getRoomsCount());
+        /*inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
+                booking.getCheckOutDate(), booking.getRoomsCount());*/
 
         if(booking.getBookingStatus() == BookingStatus.CONFIRMED) {
+
+            booking.setBookingStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+
+            inventoryRepository.findAndLockBookedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
+
             inventoryRepository.cancelBooking(booking.getRoom().getId(), booking.getCheckInDate(),
                     booking.getCheckOutDate(), booking.getRoomsCount());
 
@@ -267,80 +270,83 @@ public class BookingServiceImpl implements BookingService {
             }
 
         } else {
-            //The method for expiry works for the PENDING_PAYMENT state too.
-            inventoryRepository.expireBooking(booking.getRoom().getId(),
-                    booking.getCheckInDate(),
-                    booking.getCheckOutDate(),
-                    booking.getRoomsCount());
+
+            booking.setBookingStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+            inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
+            inventoryRepository.cancelPaymentPendingBooking(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
         }
     }
 
-    @Override
-    public BookingStatus getBookingStatus(Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(
-                () -> new ResourceNotFoundException("Booking not found with id: "+bookingId)
-        );
-        User user = getCurrentUser();
-        if (!user.equals(booking.getUser())) {
-            throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
-        }
 
-        if(hasBookingExpired(booking)) {
-            return BookingStatus.EXPIRED;
-        }
-
-        return booking.getBookingStatus();
+@Override
+public BookingStatus getBookingStatus(Long bookingId) {
+    Booking booking = bookingRepository.findById(bookingId).orElseThrow(
+            () -> new ResourceNotFoundException("Booking not found with id: "+bookingId)
+    );
+    User user = getCurrentUser();
+    if (!user.equals(booking.getUser())) {
+        throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
     }
 
-    @Override
-    public List<BookingDto> getAllBookingsByHotelId(Long hotelId) {
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not " +
-                "found with ID: "+hotelId));
-        User user = getCurrentUser();
-
-        log.info("Getting all booking for the hotel with ID: {}", hotelId);
-
-        if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with id: "+hotelId);
-
-        List<Booking> bookings = bookingRepository.findByHotel(hotel);
-
-        return bookings.stream()
-                .map((element) -> modelMapper.map(element, BookingDto.class))
-                .collect(Collectors.toList());
+    if(hasBookingExpired(booking)) {
+        return BookingStatus.EXPIRED;
     }
 
-    //checks whether the user owns the hotel and then allows the user to get the revenue.
-    @Override
-    public HotelReportDto getHotelReport(Long hotelId, LocalDate startDate, LocalDate endDate) {
+    return booking.getBookingStatus();
+}
 
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not " +
-                "found with ID: "+hotelId));
-        User user = getCurrentUser();
+@Override
+public List<BookingDto> getAllBookingsByHotelId(Long hotelId) {
+    Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not " +
+            "found with ID: "+hotelId));
+    User user = getCurrentUser();
 
-        log.info("Generating report for hotel with ID: {}", hotelId);
+    log.info("Getting all booking for the hotel with ID: {}", hotelId);
 
-        if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with id: "+hotelId);
+    if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with id: "+hotelId);
 
-        LocalDateTime startDateTime = startDate.atStartOfDay();
-        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+    List<Booking> bookings = bookingRepository.findByHotel(hotel);
 
-        List<Booking> bookings = bookingRepository.findByHotelAndCreatedAtBetween(hotel, startDateTime, endDateTime);
+    return bookings.stream()
+            .map((element) -> modelMapper.map(element, BookingDto.class))
+            .collect(Collectors.toList());
+}
 
-        Long totalConfirmedBookings = bookings
-                .stream()
-                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
-                .count();
+//checks whether the user owns the hotel and then allows the user to get the revenue.
+@Override
+public HotelReportDto getHotelReport(Long hotelId, LocalDate startDate, LocalDate endDate) {
 
-        BigDecimal totalRevenueOfConfirmedBookings = bookings.stream()
-                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
-                .map(Booking::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not " +
+            "found with ID: "+hotelId));
+    User user = getCurrentUser();
 
-        BigDecimal avgRevenue = totalConfirmedBookings == 0 ? BigDecimal.ZERO :
-                totalRevenueOfConfirmedBookings.divide(BigDecimal.valueOf(totalConfirmedBookings), RoundingMode.HALF_UP);
+    log.info("Generating report for hotel with ID: {}", hotelId);
 
-        return new HotelReportDto(totalConfirmedBookings, totalRevenueOfConfirmedBookings, avgRevenue);
-    }
+    if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with id: "+hotelId);
+
+    LocalDateTime startDateTime = startDate.atStartOfDay();
+    LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+    List<Booking> bookings = bookingRepository.findByHotelAndCreatedAtBetween(hotel, startDateTime, endDateTime);
+
+    Long totalConfirmedBookings = bookings
+            .stream()
+            .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
+            .count();
+
+    BigDecimal totalRevenueOfConfirmedBookings = bookings.stream()
+            .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
+            .map(Booking::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    BigDecimal avgRevenue = totalConfirmedBookings == 0 ? BigDecimal.ZERO :
+            totalRevenueOfConfirmedBookings.divide(BigDecimal.valueOf(totalConfirmedBookings), RoundingMode.HALF_UP);
+
+    return new HotelReportDto(totalConfirmedBookings, totalRevenueOfConfirmedBookings, avgRevenue);
+}
 
 
 

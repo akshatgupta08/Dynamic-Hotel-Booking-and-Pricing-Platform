@@ -3,5 +3,6 @@ package com.example.demo.entity.enums;
 
 public enum Role {
     GUEST,
-    HOTEL_MANAGER
+    HOTEL_MANAGER,
+    ADMIN
 }

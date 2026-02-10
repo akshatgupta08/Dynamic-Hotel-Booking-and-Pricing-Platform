@@ -41,6 +41,7 @@ import static com.example.demo.util.AppUtils.getCurrentUser;
 
             User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             hotel.setOwner(user); //only admins can access through the controllers.
+            hotel.setId(null);
             hotel = hotelRepository.save(hotel);
             log.info("Created a new hotel with ID: {}", hotelDto.getId());
             return modelMapper.map(hotel, HotelDto.class);

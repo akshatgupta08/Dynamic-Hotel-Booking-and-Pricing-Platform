@@ -30,6 +30,7 @@ public class RoomServiceImpl implements RoomService {
     private final InventoryService inventoryService;
     private final ModelMapper modelMapper;
 
+    @Transactional
     @Override
     public RoomDto createNewRoom(Long hotelId, RoomDto roomDto) {
         log.info("Creating a new room in hotel with ID: {}", hotelId);
@@ -45,6 +46,8 @@ public class RoomServiceImpl implements RoomService {
 
         Room room = modelMapper.map(roomDto, Room.class);
         room.setHotel(hotel);
+        room.setId(null); // added so that hibernate does not confuse between creating a new resource and
+                          // updating an already existing one.
         room = roomRepository.save(room);
 
         if (hotel.getActive()) { //only if the hotel is active, do we add the room in the inventory.

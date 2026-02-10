@@ -3,8 +3,10 @@ package com.example.demo.services;
 import com.example.demo.dto.ProfileUpdateRequestDto;
 import com.example.demo.dto.UserDto;
 import com.example.demo.entity.User;
+import com.example.demo.entity.enums.Role;
 import com.example.demo.exceptions.ResourceNotFoundException;
 import com.example.demo.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -49,5 +51,22 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByEmail(username).orElse(null);
+    }
+
+    @Override
+    public void addRole(Long id, Role role) {
+        User user = getUserById(id);
+        (user.getRoles()).add(role);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void makeManager(Long id) {
+
+        User user = getUserById(id);
+
+        (user.getRoles()).add(Role.HOTEL_MANAGER);
+
+        userRepository.save(user);
     }
 }

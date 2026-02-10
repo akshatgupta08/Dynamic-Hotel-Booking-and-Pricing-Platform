@@ -68,7 +68,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                 FROM Inventory i
                 WHERE i.room.id = :roomId
                   AND i.date BETWEEN :startDate AND :endDate
-                  AND (i.totalCount - i.bookedCount) >= :numberOfRooms
+                  AND (i.reservedCount) >= :numberOfRooms
                   AND i.closed = false
             """)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -110,6 +110,21 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                         @Param("numberOfRooms") int numberOfRooms);
 
 
+    @Query("""
+                SELECT i
+                FROM Inventory i
+                WHERE i.room.id = :roomId
+                  AND i.date BETWEEN :startDate AND :endDate
+                  AND (i.bookedCount) >= :numberOfRooms
+                  AND i.closed = false
+            """)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Inventory> findAndLockBookedInventory(@Param("roomId") Long roomId,
+                                                 @Param("startDate") LocalDate startDate,
+                                                 @Param("endDate") LocalDate endDate,
+                                                 @Param("numberOfRooms") int numberOfRooms);
+
+
     @Modifying
     @Query("""
                 UPDATE Inventory i
@@ -120,6 +135,20 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                   AND i.closed = false
             """)
     void cancelBooking(@Param("roomId") Long roomId,
+                       @Param("startDate") LocalDate startDate,
+                       @Param("endDate") LocalDate endDate,
+                       @Param("numberOfRooms") int numberOfRooms);
+
+    @Modifying
+    @Query("""
+                UPDATE Inventory i
+                SET i.reservedCount = i.reservedCount - :numberOfRooms
+                WHERE i.room.id = :roomId
+                  AND i.date BETWEEN :startDate AND :endDate
+                  AND (i.totalCount - i.bookedCount) >= :numberOfRooms
+                  AND i.closed = false
+            """)
+    void cancelPaymentPendingBooking(@Param("roomId") Long roomId,
                        @Param("startDate") LocalDate startDate,
                        @Param("endDate") LocalDate endDate,
                        @Param("numberOfRooms") int numberOfRooms);

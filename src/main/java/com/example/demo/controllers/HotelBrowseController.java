@@ -22,7 +22,7 @@ public class HotelBrowseController {
     @GetMapping("/search")
     public ResponseEntity<Page<HotelPriceResponseDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest) {
        //multiple hotels come in a page.
-        var page = inventoryService.searchHotels(hotelSearchRequest);
+        var page = inventoryService.searchHotels(hotelSearchRequest); //price is the hotel minimum price.
         return ResponseEntity.ok(page);
     }
 

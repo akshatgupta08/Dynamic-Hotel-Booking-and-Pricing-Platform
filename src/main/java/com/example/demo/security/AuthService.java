@@ -8,6 +8,7 @@ import com.example.demo.entity.enums.Role;
 import com.example.demo.exceptions.ResourceNotFoundException;
 import com.example.demo.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -29,6 +31,8 @@ public class AuthService {
 
     public UserDto signUp(SignUpRequestDto signUpRequestDto) {
 
+        log.info("Started sign up");
+
         User user = userRepository.findByEmail(signUpRequestDto.getEmail()).orElse(null);
 
         if (user != null) {
@@ -39,7 +43,7 @@ public class AuthService {
         newUser.setRoles(Set.of(Role.GUEST));
         newUser.setPassword(passwordEncoder.encode(signUpRequestDto.getPassword()));
         newUser = userRepository.save(newUser);
-
+        log.info("reached here");
         return modelMapper.map(newUser, UserDto.class);
     }
 

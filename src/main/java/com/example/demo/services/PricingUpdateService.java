@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@EnableScheduling
 @Transactional
 public class PricingUpdateService {
 
@@ -96,6 +98,6 @@ public class PricingUpdateService {
             inventory.setPrice(dynamicPrice);
         });
         inventoryRepository.saveAll(inventoryList);
+        log.info("batch price updated");
     }
-
 }

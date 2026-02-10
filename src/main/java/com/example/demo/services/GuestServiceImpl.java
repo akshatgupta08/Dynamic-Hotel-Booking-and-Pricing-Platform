@@ -41,6 +41,7 @@ public class GuestServiceImpl implements GuestService {
         User user = getCurrentUser();
         Guest guest = modelMapper.map(guestDto, Guest.class);
         guest.setUser(user);
+        guest.setId(null);
         Guest savedGuest = guestRepository.save(guest);
         log.info("Guest added with ID: {}", savedGuest.getId());
         return modelMapper.map(savedGuest, GuestDto.class);

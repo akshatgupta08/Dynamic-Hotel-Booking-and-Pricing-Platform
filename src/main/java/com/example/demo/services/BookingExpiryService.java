@@ -7,7 +7,9 @@ import com.example.demo.repositories.BookingRepository;
 import com.example.demo.repositories.InventoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.query.Param;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
+@EnableScheduling
+@Slf4j
+@Service
 @Transactional
 public class BookingExpiryService {
 
@@ -42,9 +47,12 @@ public class BookingExpiryService {
 
             booking.setBookingStatus(BookingStatus.EXPIRED);
 
+            log.info("Booking with id: " + booking.getId() + " expired.");
+
         }
 
         bookingRepository.saveAll(expiredBookings);
+
     }
 
 }
